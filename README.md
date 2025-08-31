@@ -1,9 +1,9 @@
-🏥 Notifikasi Rawat Inap Ke Dokter DPJP 
-Sistem notifikasi real-time untuk rumah sakit yang mengirim alert Telegram kepada dokter ketika ada pasien baru rawat inap yang ditugaskan sebagai DPJP (Dokter Penanggung Jawab Pasien).
+# **🏥 Notifikasi Rawat Inap Ke Dokter DPJP**
+*Sistem notifikasi real-time untuk rumah sakit yang mengirim alert Telegram kepada dokter ketika ada pasien baru rawat inap yang ditugaskan sebagai DPJP (Dokter Penanggung Jawab Pasien).*
 
-Compatible dengan database SIMRS Khanza.
+**Compatible dengan database SIMRS Khanza.**
 
-📋 Table of Contents
+##*📋 Table of Contents**
 Features
 
 Architecture
@@ -28,7 +28,8 @@ Contributing
 
 License
 
-✨ Features
+## **✨ Features**
+
 🚨 Real-time notifications via database triggers
 
 📱 Telegram integration for instant messaging
@@ -47,19 +48,9 @@ License
 
 📈 Scalable design untuk multiple hospitals
 
-🏗️ Architecture
-text
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   SIMRS Khanza  │    │   MySQL Trigger  │    │ Notification    │
-│   (Java App)    │───▶│   (Database)     │───▶│ Queue Table     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                         │
-                                                         ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Telegram Bot    │◀───│ Python Monitor   │◀───│ Queue Processor │
-│ (Notifications) │    │ (Main App)       │    │ (Background)    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-📋 Prerequisites
+
+## **📋 Prerequisites**
+
 Python 3.8+
 
 MySQL/MariaDB 5.7+
@@ -73,19 +64,22 @@ Windows/Linux Server
 🚀 Installation
 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/hospital-notification-system.git
-```
+git clone https://github.com/dhiafahmig/hospital-notification-s](https://github.com/dhiafahmig/notifikasi-kamar-inap.git
 cd hospital-notification-system
+```
 2. Create Virtual Environment
 ```bash
 # Windows
-```
 python -m venv venv
 venv\Scripts\activate
+```
 
 # Linux/MacOS
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
+
 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
@@ -98,7 +92,6 @@ mkdir -p logs config
 1. Create Notification Queue Table
 ```sql
 CREATE TABLE notification_queue (
-```
     id INT AUTO_INCREMENT PRIMARY KEY,
     no_rawat VARCHAR(20) NOT NULL,
     status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
@@ -111,16 +104,16 @@ CREATE TABLE notification_queue (
     INDEX idx_created_at (created_at),
     INDEX idx_no_rawat (no_rawat)
 );
+```
 2. Add Telegram ID Column to Doctor Table
 ```sql
 ALTER TABLE dokter
-```
 ADD COLUMN telegram_id VARCHAR(50) NULL;
+```
+
 3. Create Database Trigger
 ```sql
 DELIMITER $$
-```
-
 CREATE TRIGGER trg_after_insert_dpjp_notification
 AFTER INSERT ON dpjp_ranap
 FOR EACH ROW
@@ -130,44 +123,49 @@ BEGIN
 END$$
 
 DELIMITER ;
-🤖 Telegram Bot Setup
+```
+
+## **🤖 Telegram Bot Setup**
 1. Create Telegram Bot
-Chat dengan @BotFather di Telegram
+- Chat dengan @BotFather di Telegram
 
-Kirim /newbot
+- Kirim /newbot
 
-Ikuti instruksi untuk membuat bot
+- Ikuti instruksi untuk membuat bot
 
-Simpan Bot Token yang diberikan
+- Simpan Bot Token yang diberikan
 
 2. Get Doctor Chat IDs
-Minta setiap dokter untuk chat dengan bot Anda
+- Minta setiap dokter untuk chat dengan bot Anda
 
-Dokter kirim /start ke bot
+- Dokter kirim /start ke bot
 
-Ambil Chat ID dengan mengakses:
+- Ambil Chat ID dengan mengakses:
 
+```bash
 text
 https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
-Salin chat.id dari response JSON
+```
+
+- Salin chat.id dari response JSON
 
 3. Update Doctor Data
 ```sql
 - - Update telegram_id untuk setiap dokter
-```
 UPDATE dokter SET telegram_id = '123456789' WHERE kd_dokter = 'D001';
 UPDATE dokter SET telegram_id = '987654321' WHERE kd_dokter = 'D002';
-- - Dst...
-⚙️ Configuration
+```
+
+## **⚙️ Configuration**
 1. Environment Configuration
 Copy dan edit file environment:
 
 ```bash
 cp config/.env.example config/.env
-```
 Edit config/.env:
+```
 
-text
+```text
 # Database Configuration
 DB_HOST=localhost
 DB_USER=your_db_user
@@ -181,7 +179,11 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 # Application Settings
 CHECK_INTERVAL=10
 LOG_LEVEL=INFO
+```
+
 2. YAML Configuration
+
+```
 Edit config/config.yaml:
 
 text
@@ -209,34 +211,18 @@ logging:
   file: "logs/patient_monitor.log"
   max_bytes: 10485760  # 10MB
   backup_count: 5
-🏃‍♂️ Usage
+
+```
+
+## **🏃‍♂️ Usage**
 Running the Application
 Development Mode
 ```bash
 python src/main.py
 ```
-Production Mode (Linux)
-Install as systemd service:
 
-```bash
-sudo cp systemd/hospital-notification.service /etc/systemd/system/
-```
-sudo systemctl daemon-reload
-sudo systemctl enable hospital-notification
-sudo systemctl start hospital-notification
-Check status:
-
-```bash
-sudo systemctl status hospital-notification
-```
-Production Mode (Windows)
-```bash
-# Run as Windows Service menggunakan NSSM atau Task Scheduler
-```
-# Atau jalankan di PowerShell:
-python src/main.py
 Expected Output
-text
+```text
 🚀 Hospital Notification Queue Monitor Started
 ⏱️ Check interval: 10 seconds
 🔍 Checking notification queue...
@@ -246,17 +232,19 @@ text
 ✅ Notification 1 sent successfully
 📊 Monitoring
 Log Files
+```
 ```bash
 # Monitor real-time logs
-```
 tail -f logs/patient_monitor.log
+```
 
 # Check system logs (Linux)
+```
 sudo journalctl -u hospital-notification -f
 Database Monitoring
+```
 ```sql
 - - Check notification queue status
-```
 SELECT 
     status, 
     COUNT(*) as count,
@@ -270,108 +258,18 @@ SELECT * FROM notification_queue
 WHERE status = 'failed' 
 ORDER BY created_at DESC 
 LIMIT 10;
+```
+
 Health Check Endpoints
 ```bash
 # Test database connection
-```
 python scripts/test_connection.py
-
+```
 # Test Telegram bot
+```bash
 python scripts/test_telegram.py
-🐛 Troubleshooting
-Common Issues
-1. No Notifications Received
-Check:
-
-Database trigger is created: SHOW TRIGGERS LIKE 'trg_after_insert_dpjp_notification';
-
-Doctor has telegram_id: SELECT telegram_id FROM dokter WHERE kd_dokter = 'D001';
-
-Queue has pending items: SELECT * FROM notification_queue WHERE status = 'pending';
-
-2. Database Connection Error
-Solutions:
-
-Verify database credentials in config files
-
-Check if MySQL service is running
-
-Test connection: python scripts/test_connection.py
-
-3. Telegram API Error
-Solutions:
-
-Verify bot token is correct
-
-Check if bot is blocked by user
-
-Test with: python scripts/test_telegram.py
-
-4. Unicode/Emoji Errors (Windows)
-Solution:
-
-```bash
-# Set PowerShell to UTF-8
 ```
-chcp 65001
-$env:PYTHONIOENCODING = "utf-8"
-python src/main.py
-Debug Mode
-Enable debug logging in config/config.yaml:
 
-text
-app:
-  debug: true
-logging:
-  level: "DEBUG"
-🤝 Contributing
-Fork the repository
-
-Create feature branch: git checkout -b feature/amazing-feature
-
-Commit changes: git commit -m 'Add amazing feature'
-
-Push to branch: git push origin feature/amazing-feature
-
-Open Pull Request
-
-Development Setup
-```bash
-# Install development dependencies
-```
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Format code
-black src/
-flake8 src/
-📁 Project Structure
-text
-hospital-notification-system/
-├── src/
-│   ├── database/
-│   │   ├── connection.py      # Database connection pool
-│   │   └── queries.py         # SQL queries
-│   ├── notifiers/
-│   │   ├── base.py           # Base notifier class
-│   │   └── telegram.py       # Telegram integration
-│   ├── utils/
-│   │   ├── config.py         # Configuration loader
-│   │   └── logger.py         # Logging setup
-│   └── main.py               # Main application
-├── config/
-│   ├── .env.example          # Environment template
-│   └── config.yaml           # YAML configuration
-├── scripts/
-│   ├── test_connection.py    # Database test
-│   └── test_telegram.py      # Telegram test
-├── systemd/
-│   └── hospital-notification.service
-├── logs/                     # Log files
-├── requirements.txt          # Python dependencies
-└── README.md
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
