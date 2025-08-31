@@ -72,12 +72,14 @@ Windows/Linux Server
 
 🚀 Installation
 1. Clone Repository
-bash
+```bash
 git clone https://github.com/yourusername/hospital-notification-system.git
+```
 cd hospital-notification-system
 2. Create Virtual Environment
-bash
+```bash
 # Windows
+```
 python -m venv venv
 venv\Scripts\activate
 
@@ -85,15 +87,18 @@ venv\Scripts\activate
 python3 -m venv venv
 source venv/bin/activate
 3. Install Dependencies
-bash
+```bash
 pip install -r requirements.txt
+```
 4. Create Directory Structure
-bash
+```bash
 mkdir -p logs config
+```
 🗄️ Database Setup
 1. Create Notification Queue Table
-sql
+```sql
 CREATE TABLE notification_queue (
+```
     id INT AUTO_INCREMENT PRIMARY KEY,
     no_rawat VARCHAR(20) NOT NULL,
     status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
@@ -107,12 +112,14 @@ CREATE TABLE notification_queue (
     INDEX idx_no_rawat (no_rawat)
 );
 2. Add Telegram ID Column to Doctor Table
-sql
-ALTER TABLE dokter 
+```sql
+ALTER TABLE dokter
+```
 ADD COLUMN telegram_id VARCHAR(50) NULL;
 3. Create Database Trigger
-sql
+```sql
 DELIMITER $$
+```
 
 CREATE TRIGGER trg_after_insert_dpjp_notification
 AFTER INSERT ON dpjp_ranap
@@ -145,17 +152,19 @@ https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
 Salin chat.id dari response JSON
 
 3. Update Doctor Data
-sql
--- Update telegram_id untuk setiap dokter
+```sql
+- - Update telegram_id untuk setiap dokter
+```
 UPDATE dokter SET telegram_id = '123456789' WHERE kd_dokter = 'D001';
 UPDATE dokter SET telegram_id = '987654321' WHERE kd_dokter = 'D002';
--- Dst...
+- - Dst...
 ⚙️ Configuration
 1. Environment Configuration
 Copy dan edit file environment:
 
-bash
+```bash
 cp config/.env.example config/.env
+```
 Edit config/.env:
 
 text
@@ -203,23 +212,27 @@ logging:
 🏃‍♂️ Usage
 Running the Application
 Development Mode
-bash
+```bash
 python src/main.py
+```
 Production Mode (Linux)
 Install as systemd service:
 
-bash
+```bash
 sudo cp systemd/hospital-notification.service /etc/systemd/system/
+```
 sudo systemctl daemon-reload
 sudo systemctl enable hospital-notification
 sudo systemctl start hospital-notification
 Check status:
 
-bash
+```bash
 sudo systemctl status hospital-notification
+```
 Production Mode (Windows)
-bash
+```bash
 # Run as Windows Service menggunakan NSSM atau Task Scheduler
+```
 # Atau jalankan di PowerShell:
 python src/main.py
 Expected Output
@@ -233,15 +246,17 @@ text
 ✅ Notification 1 sent successfully
 📊 Monitoring
 Log Files
-bash
+```bash
 # Monitor real-time logs
+```
 tail -f logs/patient_monitor.log
 
 # Check system logs (Linux)
 sudo journalctl -u hospital-notification -f
 Database Monitoring
-sql
--- Check notification queue status
+```sql
+- - Check notification queue status
+```
 SELECT 
     status, 
     COUNT(*) as count,
@@ -250,14 +265,15 @@ SELECT
 FROM notification_queue 
 GROUP BY status;
 
--- Check failed notifications
+- - Check failed notifications
 SELECT * FROM notification_queue 
 WHERE status = 'failed' 
 ORDER BY created_at DESC 
 LIMIT 10;
 Health Check Endpoints
-bash
+```bash
 # Test database connection
+```
 python scripts/test_connection.py
 
 # Test Telegram bot
@@ -294,8 +310,9 @@ Test with: python scripts/test_telegram.py
 4. Unicode/Emoji Errors (Windows)
 Solution:
 
-bash
+```bash
 # Set PowerShell to UTF-8
+```
 chcp 65001
 $env:PYTHONIOENCODING = "utf-8"
 python src/main.py
@@ -319,8 +336,9 @@ Push to branch: git push origin feature/amazing-feature
 Open Pull Request
 
 Development Setup
-bash
+```bash
 # Install development dependencies
+```
 pip install -r requirements-dev.txt
 
 # Run tests
