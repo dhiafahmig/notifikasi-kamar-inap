@@ -1,104 +1,95 @@
 #!/usr/bin/env python3
-
-import sys
 import os
+import sys
 import time
 import schedule
-from datetime import datetime
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from database.connection import DatabaseManager
-from database.queries import PatientQueries
+from database.queries   import PatientQueries
 from notifiers.telegram import TelegramNotifier
-from utils.logger import get_logger
-from utils.config import Config
+from utils.logger       import get_logger
+from utils.config       import Config
+
 
 class HospitalNotificationQueueMonitor:
     def __init__(self):
-        self.config = Config()
-        self.logger = get_logger(__name__)
-        self.db_manager = DatabaseManager(self.config.database)
+        self.config          = Config()
+        self.logger          = get_logger(__name__)
+        self.db_manager      = DatabaseManager(self.config.database)
         self.patient_queries = PatientQueries(self.db_manager)
-        self.telegram = TelegramNotifier(self.config.telegram)
-        
-    def process_notification_queue(self):
-        """Process pending notifications from queue"""
-        try:
-            self.logger.info("🔍 Checking notification queue...")
-            
-            pending_notifications = self.patient_queries.get_pending_notifications()
-            
-            if pending_notifications:
-                self.logger.info(f"🆕 Found {len(pending_notifications)} pending notifications")
-                
-                for notification in pending_notifications:
-                    self._process_single_notification(notification)
-            else:
-                self.logger.info("ℹ️ No pending notifications")
-                
-        except Exception as e:
-            self.logger.error(f"❌ Error processing notification queue: {e}")
-    
-    def _process_single_notification(self, notification):
-        """Process a single notification"""
-        try:
-            notification_id = notification['notification_id']
-            self.logger.info(f"📤 Processing notification {notification_id} for patient: {notification['nm_pasien']}")
-            
-            if notification.get('telegram_id'):
-                # Kirim notifikasi Telegram
-                if self.telegram.send_patient_notification(notification):
-                    # Update status ke 'sent'
-                    self.patient_queries.update_notification_status(notification_id, 'sent')
-                    self.logger.info(f"✅ Notification {notification_id} sent successfully")
-                else:
-                    # Update status ke 'failed'
-                    self.patient_queries.update_notification_status(
-                        notification_id, 'failed', 'Failed to send Telegram message'
-                    )
-                    self.logger.error(f"❌ Notification {notification_id} failed to send")
-            else:
-                # Dokter tidak punya Telegram ID
-                self.patient_queries.update_notification_status(
-                    notification_id, 'failed', f'Doctor {notification["nm_dokter"]} has no Telegram ID'
-                )
-                self.logger.warning(f"⚠️ Doctor {notification['nm_dokter']} has no Telegram ID")
-                
-        except Exception as e:
-            # Update status ke 'failed' dengan error message
-            if 'notification_id' in locals():
-                self.patient_queries.update_notification_status(
-                    notification['notification_id'], 'failed', str(e)
-                )
-            self.logger.error(f"❌ Error processing notification: {e}")
+        self.telegram        = TelegramNotifier(self.config.telegram)
 
+    # ------------------------------------------------------------ #
+    def process_notification_queue(self):
+        """Ambil notifikasi pending, kirim Telegram, update status."""
+        try:
+            self.logger.info("🔍 Checking notification queue…")
+            pending = self.patient_queries.get_pending_notifications()
+
+            if not pending:
+                self.logger.info("ℹ️ No pending notifications")
+                return
+
+            self.logger.info("🆕 Found %s pending notifications", len(pending))
+            for notif in pending:
+                self._process_single_notification(notif)
+
+        except Exception as err:
+            self.logger.error("❌ Error processing queue: %s", err)
+
+    # ------------------------------------------------------------ #
+    def _process_single_notification(self, notif: dict):
+        notif_id = notif["notification_id"]
+        try:
+            self.logger.info(
+                "📤 Processing notification %s for %s",
+                notif_id,
+                notif["nm_pasien"],
+            )
+
+            if not notif.get("telegram_id"):
+                self.patient_queries.update_notification_status(
+                    notif_id, "failed", "Doctor has no Telegram ID"
+                )
+                self.logger.warning(
+                    "⚠️ Doctor %s has no Telegram ID", notif["nm_dokter"]
+                )
+                return
+
+            if self.telegram.send_patient_notification(notif):
+                self.patient_queries.update_notification_status(notif_id, "sent")
+                self.logger.info("✅ Notification %s sent", notif_id)
+            else:
+                self.patient_queries.update_notification_status(
+                    notif_id, "failed", "Telegram send error"
+                )
+                self.logger.error("❌ Notification %s failed to send", notif_id)
+
+        except Exception as err:
+            self.patient_queries.update_notification_status(notif_id, "failed", str(err))
+            self.logger.error("💥 Error processing notification %s: %s", notif_id, err)
+
+    # ------------------------------------------------------------ #
     def start_monitoring(self):
-        """Start the queue monitoring system"""
-        check_interval = self.config.app.get('check_interval', 10)  # Check setiap 10 detik
-        
-        self.logger.info("🚀 Hospital Notification Queue Monitor Started")
-        self.logger.info(f"⏱️ Check interval: {check_interval} seconds")
-        
-        # Schedule regular checks
-        schedule.every(check_interval).seconds.do(self.process_notification_queue)
-        
-        # Initial check
-        self.process_notification_queue()
-        
-        # Keep running
+        interval = self.config.app.get("check_interval", 10)  # detik
+        self.logger.info("🚀 Monitor started — interval %s s", interval)
+
+        schedule.every(interval).seconds.do(self.process_notification_queue)
+        self.process_notification_queue()  # first run
+
         while True:
             try:
                 schedule.run_pending()
                 time.sleep(1)
             except KeyboardInterrupt:
-                self.logger.info("🛑 System stopped by user")
+                self.logger.info("🛑 Stopped by user")
                 break
-            except Exception as e:
-                self.logger.error(f"💥 System error: {e}")
+            except Exception as err:
+                self.logger.error("💥 Runtime error: %s", err)
                 time.sleep(5)
 
+
 if __name__ == "__main__":
-    monitor = HospitalNotificationQueueMonitor()
-    monitor.start_monitoring()
+    HospitalNotificationQueueMonitor().start_monitoring()

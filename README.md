@@ -3,31 +3,6 @@
 
 **Compatible dengan database SIMRS Khanza.**
 
-##*📋 Table of Contents**
-Features
-
-Architecture
-
-Prerequisites
-
-Installation
-
-Database Setup
-
-Telegram Bot Setup
-
-Configuration
-
-Usage
-
-Monitoring
-
-Troubleshooting
-
-Contributing
-
-License
-
 ## **✨ Features**
 
 🚨 Real-time notifications via database triggers
