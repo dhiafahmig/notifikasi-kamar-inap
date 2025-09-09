@@ -1,3 +1,5 @@
 config/config.yaml
 config/.env
 logs/patient_monitor.log
+scripts/test_kirimi_correct.py
+scripts/test_whatsapp.py

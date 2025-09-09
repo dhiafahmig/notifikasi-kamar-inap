@@ -8,7 +8,3 @@ class BaseNotifier(ABC):
         """Send patient notification"""
         pass
     
-    @abstractmethod
-    def test_connection(self) -> bool:
-        """Test notifier connection"""
-        pass

@@ -27,6 +27,7 @@ class Config:
 
     def _load_env_overrides(self):
         """Load configuration overrides from environment"""
+        # Database overrides
         if os.getenv('DB_HOST'):
             self._config['database']['host'] = os.getenv('DB_HOST')
         if os.getenv('DB_USER'):
@@ -35,8 +36,22 @@ class Config:
             self._config['database']['password'] = os.getenv('DB_PASSWORD')
         if os.getenv('DB_NAME'):
             self._config['database']['database'] = os.getenv('DB_NAME')
+            
+        # Telegram overrides
         if os.getenv('TELEGRAM_BOT_TOKEN'):
             self._config['telegram']['bot_token'] = os.getenv('TELEGRAM_BOT_TOKEN')
+        if os.getenv('TELEGRAM_ENABLED'):
+            self._config['telegram']['enabled'] = os.getenv('TELEGRAM_ENABLED').lower() == 'true'
+            
+         # WhatsApp overrides (FORMAT BARU)
+        if os.getenv('WHATSAPP_USER_CODE'):
+            self._config['whatsapp']['user_code'] = os.getenv('WHATSAPP_USER_CODE')
+        if os.getenv('WHATSAPP_SECRET'):
+            self._config['whatsapp']['secret'] = os.getenv('WHATSAPP_SECRET')
+        if os.getenv('WHATSAPP_DEVICE_ID'):
+            self._config['whatsapp']['device_id'] = os.getenv('WHATSAPP_DEVICE_ID')
+        if os.getenv('WHATSAPP_ENABLED'):
+            self._config['whatsapp']['enabled'] = os.getenv('WHATSAPP_ENABLED').lower() == 'true'
 
     @property
     def database(self):
@@ -45,6 +60,10 @@ class Config:
     @property
     def telegram(self):
         return self._config['telegram']
+
+    @property
+    def whatsapp(self):  # PROPERTY BARU
+        return self._config['whatsapp']
 
     @property
     def app(self):
