@@ -51,6 +51,7 @@ class TelegramNotifier(BaseNotifier):
 
         return (
             f"{header}\n\n"
+            f"👨‍⚕️ *DPJP:* {patient['nm_dokter']}\n\n"
             f"👤 *Nama Pasien:* {patient['nm_pasien']}\n"
             f"🚻 *Jenis Kelamin:* {patient['jenis_kelamin']}\n"
             f"📋 *No. Rawat:* {patient['no_rawat']}\n"
@@ -59,7 +60,6 @@ class TelegramNotifier(BaseNotifier):
             f"🏥 *Bangsal:* {patient['nm_bangsal']} _(Kode: {patient['kd_bangsal']})_\n\n"
             f"📅 *Tanggal Masuk:* {patient['tgl_masuk'].strftime('%d/%m/%Y %H:%M WIB')}\n"
             f"🩺 *Diagnosa Awal:* {patient['diagnosa_awal']}\n"
-            f"👨‍⚕️ *DPJP:* {patient['nm_dokter']}\n\n"
             f"⏰ Notifikasi: {datetime.now().strftime('%d/%m/%Y %H:%M WIB')}"
         )
 

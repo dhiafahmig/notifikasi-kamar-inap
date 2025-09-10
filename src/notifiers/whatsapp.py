@@ -114,6 +114,7 @@ class WhatsAppNotifier(BaseNotifier):
 
         return f"""{header}
 
+👨‍⚕️ *DPJP:* {patient.get('nm_dokter', 'N/A')}
 👤 *Nama Pasien:* {patient.get('nm_pasien', 'N/A')}
 🚻 *Jenis Kelamin:* {patient.get('jenis_kelamin', 'N/A')}
 📋 *No. Rawat:* {patient.get('no_rawat', 'N/A')}
@@ -124,7 +125,6 @@ class WhatsAppNotifier(BaseNotifier):
 
 📅 *Tanggal Masuk:* {tgl_masuk.strftime('%d/%m/%Y %H:%M WIB')}
 🩺 *Diagnosa Awal:* {patient.get('diagnosa_awal', 'N/A')}
-👨‍⚕️ *DPJP:* {patient.get('nm_dokter', 'N/A')}
 
 ⏰ Notifikasi: {datetime.now().strftime('%d/%m/%Y %H:%M WIB')}
 

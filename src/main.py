@@ -14,6 +14,8 @@ from notifiers.whatsapp import WhatsAppNotifier
 from utils.logger import get_logger
 from utils.config import Config
 
+LOCK_FILE = "notifikasi_lock.pid"
+
 class HospitalNotificationQueueMonitor:
     def __init__(self):
         """Initialize sistem monitoring notifikasi rawat inap"""
@@ -28,7 +30,7 @@ class HospitalNotificationQueueMonitor:
     def test_connections(self):
         """Test semua koneksi saat startup"""
         self.logger.info("🔍 Testing all connections...")
-        
+
         # Test database connection
         try:
             if self.db_manager.test_connection():
@@ -37,7 +39,7 @@ class HospitalNotificationQueueMonitor:
                 self.logger.error("❌ Database connection failed")
         except Exception as e:
             self.logger.error(f"❌ Database connection error: {e}")
-            
+
         # Test Telegram connection
         try:
             if hasattr(self.telegram, 'test_connection') and self.telegram.test_connection():
@@ -46,7 +48,7 @@ class HospitalNotificationQueueMonitor:
                 self.logger.error("❌ Telegram connection failed")
         except Exception as e:
             self.logger.error(f"❌ Telegram connection error: {e}")
-            
+
         # WhatsApp - hanya cek apakah enabled atau tidak (no connection test)
         try:
             if self.whatsapp.enabled:
@@ -61,16 +63,15 @@ class HospitalNotificationQueueMonitor:
         try:
             self.logger.info("🔍 Checking notification queue…")
             pending = self.patient_queries.get_pending_notifications()
-            
+            notif_ids = [notif.get("notification_id") for notif in pending]
+            self.logger.info(f"--- NOTIFIKASI DIAMBIL ({len(pending)}): {notif_ids}")
             if not pending:
                 self.logger.info("ℹ️ No pending notifications")
                 return
 
             self.logger.info("🆕 Found %s pending notifications", len(pending))
-            
             for notif in pending:
                 self._process_single_notification(notif)
-                
         except Exception as err:
             self.logger.error("❌ Error processing queue: %s", err)
 
@@ -78,7 +79,7 @@ class HospitalNotificationQueueMonitor:
     def _process_single_notification(self, notif: dict):
         """Process single notification dengan dual channel (Telegram + WhatsApp)"""
         notif_id = notif["notification_id"]
-        
+
         try:
             self.logger.info(
                 "📤 Processing notification %s for %s",
@@ -89,7 +90,7 @@ class HospitalNotificationQueueMonitor:
             # Send to both channels
             telegram_sent = False
             whatsapp_sent = False
-            
+
             # Try Telegram
             try:
                 if notif.get("telegram_id"):
@@ -102,7 +103,7 @@ class HospitalNotificationQueueMonitor:
                     self.logger.warning("⚠️ Doctor %s has no Telegram ID", notif["nm_dokter"])
             except Exception as e:
                 self.logger.error("❌ Telegram send error: %s", e)
-            
+
             # Try WhatsApp
             try:
                 if notif.get("whatsapp_number"):
@@ -133,7 +134,7 @@ class HospitalNotificationQueueMonitor:
                     notif_id, "failed", error_msg
                 )
                 self.logger.error("❌ Notification %s completely failed: %s", notif_id, error_msg)
-                
+
         except Exception as err:
             self.patient_queries.update_notification_status(
                 notif_id, "failed", str(err)
@@ -146,7 +147,7 @@ class HospitalNotificationQueueMonitor:
         """Generate appropriate error message based on available contact methods"""
         has_telegram = bool(notif.get("telegram_id"))
         has_whatsapp = bool(notif.get("whatsapp_number"))
-        
+
         if not has_telegram and not has_whatsapp:
             return "Doctor has no Telegram ID or WhatsApp number"
         elif not has_telegram:
@@ -159,20 +160,19 @@ class HospitalNotificationQueueMonitor:
     # ------------------------------------------------------------ #
     def start_monitoring(self):
         """Start monitoring dengan connection test awal"""
+        # Prevent double instance!
+        if os.path.exists(LOCK_FILE):
+            print("⚠️ Sudah ada proses notifikasi berjalan. Hanya boleh satu instance!")
+            sys.exit(1)
+        with open(LOCK_FILE, "w") as f:
+            f.write(str(os.getpid()))
         try:
-            # Test connections first
             self.test_connections()
-            
             interval = self.config.app.get("check_interval", 10)
             self.logger.info("🚀 Monitor started — interval %s s", interval)
-            
-            # Schedule the notification checking
+            # HANYA SEKALI schedule do
             schedule.every(interval).seconds.do(self.process_notification_queue)
-            
-            # First run immediately
             self.process_notification_queue()
-            
-            # Main monitoring loop
             while True:
                 try:
                     schedule.run_pending()
@@ -182,16 +182,16 @@ class HospitalNotificationQueueMonitor:
                     break
                 except Exception as err:
                     self.logger.error("💥 Runtime error: %s", err)
-                    time.sleep(5)  # Wait 5 seconds before continuing
-                    
-        except Exception as e:
-            self.logger.error("💥 Fatal error during monitoring: %s", e)
-            raise
+                    time.sleep(5)
+        finally:
+            # RELEASE LOCK FILE saat aplikasi shutdown
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
 
     def stop_monitoring(self):
-        """Gracefully stop the monitoring system"""
+        """Stop monitoring system"""
         self.logger.info("🛑 Stopping notification monitor...")
-        schedule.clear()  # Clear all scheduled jobs
+        schedule.clear() # Clear all scheduled jobs
 
 if __name__ == "__main__":
     try:
